@@ -4,9 +4,33 @@ const Remark = require('remark');
 const toString = require('mdast-util-to-string');
 const breaks = require('remark-breaks');
 const slugify = require('slugify');
+const graphql = require('graphql');
+
 const { createMdxAstCompiler } = require('@mdx-js/mdx');
 
-const defaultTitleToURL = (title) => `/${slugify(title, { lower: true })}`;
+//const defaultTitleToURL = (title) => `/${slugify(title, { lower: true })}`;
+
+const defaultTitleToURL = (title) => {
+  const query = graphql`
+    query ($slug: String) {
+      markdownRemark(fields: {slug: {eq: $slug}}) {
+        frontmatter {
+          title
+          author  {
+            name
+            avatar
+          }
+          date(formatString: "MMMM D, YYYY")
+          featuredImage
+          tags
+        }
+        html
+      }
+    }
+  `
+  return `/${slugify(title, { lower: true })}`;
+  
+};
 
 const removeFrontmatter = (content) => content.replace(/^---[\s\S]+?---/, '');
 
