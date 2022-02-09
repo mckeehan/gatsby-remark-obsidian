@@ -4,33 +4,9 @@ const Remark = require('remark');
 const toString = require('mdast-util-to-string');
 const breaks = require('remark-breaks');
 const slugify = require('slugify');
-const graphql = require('graphql');
-
 const { createMdxAstCompiler } = require('@mdx-js/mdx');
 
-//const defaultTitleToURL = (title) => `/${slugify(title, { lower: true })}`;
-
-const defaultTitleToURL = (title) => {
-  const query = graphql`
-    query ($slug: String) {
-      markdownRemark(fields: {slug: {eq: $slug}}) {
-        frontmatter {
-          title
-          author  {
-            name
-            avatar
-          }
-          date(formatString: "MMMM D, YYYY")
-          featuredImage
-          tags
-        }
-        html
-      }
-    }
-  `
-  return `/${slugify(title, { lower: true })}`;
-  
-};
+const defaultTitleToURL = (title) => `/${slugify(title, { lower: true })}`;
 
 const removeFrontmatter = (content) => content.replace(/^---[\s\S]+?---/, '');
 
@@ -69,7 +45,7 @@ const plugin = ({ markdownAST }, options = {}) => {
             [node.label, node.children[0].value] = node.label.split('|');
         }
 
-        node.url = `${titleToURL(node.slug)}${heading && `#${slugify(heading, { lower: true })}`}`;
+        node.url = `${titleToURL(node.label)}${heading && `#${slugify(heading, { lower: true })}`}`;
         node.title = node.label;
 
         if (!stripBrackets) {
@@ -78,13 +54,15 @@ const plugin = ({ markdownAST }, options = {}) => {
 
         if (isEmbed && markdownFolder) {
             const filePath = `${markdownFolder}/${node.title}.md`;
-
+            var fileContent = "";
             if (fs.existsSync(filePath)) {
-                const content = removeFrontmatter(fs.readFileSync(filePath, 'utf8'));
-                const embedAst = plugin({ markdownAST: compiler.parse(content) }, options);
-                parent.children.splice(index, 1);
-                embedAst.children.map((children) => parent.children.push(children));
+                fileContent = fs.readFileSync(filePath, 'utf8');
             }
+
+            const content = fileContent;
+            const embedAst = plugin({ markdownAST: compiler.parse(fileContent) }, options);
+            parent.children.splice(index, 1);
+            embedAst.children.map((children) => parent.children.push(children));
         }
 
         delete node.label;
@@ -96,6 +74,16 @@ const plugin = ({ markdownAST }, options = {}) => {
         const text = toString(node);
 
         const internalLinkRegex = /!?\[\[([a-zA-Z-'À-ÿ|# ]+)\]\]/;
+        const pdfEmbedRegex = /!\[\[([_\/a-zA-Z-'À-ÿ|# ]+\.pdf)\]\]/;
+
+        if (text.match(pdfEmbedRegex)) {
+            let label = text.match(pdfEmbedRegex)[1]
+            const html = text.replace(pdfEmbedRegex, '<iframe src="/' + label + '" width="100%" height="500px">');
+
+            node.type = 'html';
+            node.children = undefined;
+            node.value = html;
+        }
 
         if (text.match(internalLinkRegex)) {
             const isEmbed = text.includes('![');
