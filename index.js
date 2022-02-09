@@ -73,22 +73,40 @@ const plugin = ({ markdownAST }, options = {}) => {
     visit(markdownAST, 'paragraph', (node, index, parent) => {
         const text = toString(node);
 
-        const internalLinkRegex = /!?\[\[([a-zA-Z-'À-ÿ|# ]+)\]\]/;
-        const pdfEmbedRegex = /!\[\[([_\/a-zA-Z-'À-ÿ|# ]+\.pdf)\]\]/;
+        let finalText = text;
 
-        if (text.match(pdfEmbedRegex)) {
-            let label = text.match(pdfEmbedRegex)[1]
-            const html = text.replace(pdfEmbedRegex, '<iframe src="/' + label + '" width="100%" height="500px">');
+        const pdfEmbedRegex = /!\[\[([_\/a-zA-Z-'À-ÿ|# ]+\.pdf)\]\]/;
+        if (finalText.match(pdfEmbedRegex)) {
+            let label = finalText.match(pdfEmbedRegex)[1]
+            const html = finalText.replace(pdfEmbedRegex, '<iframe src="/' + label + '" width="100%" height="500px">');
 
             node.type = 'html';
             node.children = undefined;
             node.value = html;
+            finalText = toString(node);
         }
 
-        if (text.match(internalLinkRegex)) {
-            const isEmbed = text.includes('![');
+    });
 
-            let label = text.match(internalLinkRegex)[0].replace(/!?\[|\]/g, '');
+    visit(markdownAST, 'image', (node, index, parent) => {
+        const { type, url, title, alt } = node;
+        const myalt = alt ? alt : title;
+
+        node.type = 'html';
+        node.children = undefined;
+        node.value = '<figure class="tinyfigure"><img src="' + url + '" alt="' + myalt + '" title="' + title + '" class="tinyimage" /><figcaption>' + title + '</figcaption></figure>';
+
+    });
+
+    visit(markdownAST, 'linkReference', (node, index, parent) => {
+        const text = toString(node);
+
+        let finalText = text;
+        const internalLinkRegex = /!?\[\[([a-zA-Z-'À-ÿ|# ]+)\]\]/;
+        if (finalText.match(internalLinkRegex)) {
+            const isEmbed = finalText.includes('![');
+
+            let label = finalText.match(internalLinkRegex)[0].replace(/!?\[|\]/g, '');
             let heading = '';
 
             if (label.match(/#/)) {
@@ -106,7 +124,7 @@ const plugin = ({ markdownAST }, options = {}) => {
 
             url = `${url}${heading && `#${slugify(heading, { lower: true })}`}`;
             const aHref = `<a href="${url}" title="${label}">${label}</a>`;
-            const html = text.replace(internalLinkRegex, aHref);
+            const html = finalText.replace(internalLinkRegex, aHref);
 
             if (isEmbed && markdownFolder) {
                 const filePath = `${markdownFolder}/${label}.md`;
