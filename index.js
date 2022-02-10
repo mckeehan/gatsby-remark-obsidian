@@ -102,7 +102,7 @@ const plugin = ({ markdownAST }, options = {}) => {
 
         node.type = 'html';
         node.children = undefined;
-        node.value = `<figure className="${figureClassName}"><img src="${url}" alt="${myalt}" title="${title}"${mywidth}${myheight}/><figcaption>${title}</figcaption></figure>`;
+        node.value = `<figure class="${figureClassName}"><img src="${url}" alt="${myalt}" title="${title}"${mywidth}${myheight}/><figcaption>${title}</figcaption></figure>`;
 
     });
 
