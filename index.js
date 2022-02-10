@@ -90,7 +90,7 @@ const plugin = ({ markdownAST }, options = {}) => {
 
     visit(markdownAST, 'image', (node, index, parent) => {
         const { type, url, title, alt } = node;
-        const altWithSizeRegex = /([^|])+|([0-9]?)x([0-9]+)/;
+        const altWithSizeRegex = /([^|]+)\|([0-9]+)x([0-9]+)/;
         let myalt = alt ? alt : title;
         let mywidth = myheight = "";
         const altMatch = alt.match(altWithSizeRegex);
