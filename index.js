@@ -96,8 +96,8 @@ const plugin = ({ markdownAST }, options = {}) => {
         const altMatch = alt.match(altWithSizeRegex);
         if ( altMatch ) {
           myalt = altMatch[1];
-          mywidth = ' width="' + altMatch[2] + 'px"';
-          myheight = ' height="' +altMatch[3] + 'px"';
+          mywidth = ' width="' + altMatch[2] + '"';
+          myheight = ' height="' +altMatch[3] + '"';
         }
 
         node.type = 'html';
