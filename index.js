@@ -15,7 +15,7 @@ const compiler = createMdxAstCompiler({ remarkPlugins: [] });
 const remark = new Remark().use(breaks);
 
 const plugin = ({ markdownAST }, options = {}) => {
-    const { titleToURL = defaultTitleToURL, stripBrackets = true, highlightClassName = '', markdownFolder = '' } = options;
+    const { titleToURL = defaultTitleToURL, stripBrackets = true, highlightClassName = '', markdownFolder = '', figureClassName = '' } = options;
 
     visit(markdownAST, 'linkReference', (node, index, parent) => {
         const siblings = parent.children;
@@ -90,11 +90,19 @@ const plugin = ({ markdownAST }, options = {}) => {
 
     visit(markdownAST, 'image', (node, index, parent) => {
         const { type, url, title, alt } = node;
-        const myalt = alt ? alt : title;
+        const altWithSizeRegex = /([^|])+|([0-9]?)x([0-9]+)/;
+        let myalt = alt ? alt : title;
+        let mywidth = myheight = "";
+        const altMatch = alt.match(altWithSizeRegex);
+        if ( altMatch ) {
+          myalt = altMatch[1];
+          mywidth = ' width="' + altMatch[2] + 'px"';
+          myheight = ' height="' +altMatch[3] + 'px"';
+        }
 
         node.type = 'html';
         node.children = undefined;
-        node.value = '<figure class="tinyfigure"><img src="' + url + '" alt="' + myalt + '" title="' + title + '" class="tinyimage" /><figcaption>' + title + '</figcaption></figure>';
+        node.value = `<figure className="${figureClassName}"><img src="${url}" alt="${myalt}" title="${title}"${mywidth}${myheight}/><figcaption>${title}</figcaption></figure>`;
 
     });
 
