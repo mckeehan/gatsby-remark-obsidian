@@ -89,20 +89,32 @@ const plugin = ({ markdownAST }, options = {}) => {
     });
 
     visit(markdownAST, 'image', (node, index, parent) => {
-        const { type, url, title, alt } = node;
+        //console.log(JSON.stringify(node));
+        const { type, title, url, alt } = node;
         const altWithSizeRegex = /([^|]+)\|([0-9]+)x([0-9]+)/;
-        let myalt = alt ? alt : title;
+        const altWithWidthRegex = /([^|]+)\|([0-9]+)/;
+        let myalt = alt ;
         let mywidth = myheight = "";
         const altMatch = alt.match(altWithSizeRegex);
         if ( altMatch ) {
           myalt = altMatch[1];
-          mywidth = ' width="' + altMatch[2] + '"';
-          myheight = ' height="' +altMatch[3] + '"';
+          mywidth  = ' width="'  + altMatch[2] + '"';
+          myheight = ' height="' + altMatch[3] + '"';
+        } else if( alt.match(altWithWidthRegex) ) {
+          mywidth = ' width="200"';
+          myalt = alt.match(altWithWidthRegex)[1];
+          mywidth = ' width="'  + alt.match(altWithWidthRegex)[2] + '"';
+        } else {
+          mywidth = ' width="200"'
         }
 
-        node.type = 'html';
-        node.children = undefined;
-        node.value = `<figure class="${figureClassName}"><img src="${url}" alt="${myalt}" title="${title}"${mywidth}${myheight}/><figcaption>${title}</figcaption></figure>`;
+        if (parent.type == 'paragraph' && parent.children && parent.children.length == 1) {
+            parent.type = 'html';
+            //node.children = undefined;
+            let mytitle = title == null ? "" : title;
+            let caption = mytitle != "" ? `<figcaption>${mytitle}</figcaption>` : "";
+            parent.value = `<figure class="${figureClassName}"><img src="${url}" alt="${myalt}" title="${mytitle}"${mywidth}${myheight}/>${caption}</figure>`;
+        }
 
     });
 
